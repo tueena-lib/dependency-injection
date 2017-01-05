@@ -1,0 +1,18 @@
+{
+    "name": "tueena-lib/service-locator",
+    "description": "A tiny php 7 service locator that enables dependency injection.",
+    "type": "library",
+    "require": {
+        "php": ">=7.0.0"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^5.7"
+    },
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Bastian Fenske",
+            "email": "bastian.fenske@tueena.org"
+        }
+    ]
+}
