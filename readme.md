@@ -1,5 +1,5 @@
-tueenaLib/serviceLocator
-========================
+tueena-lib/service-locator
+==========================
 Two classes to realize dependency injection for php 7.
 
 Features
