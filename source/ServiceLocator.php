@@ -55,9 +55,6 @@ class ServiceLocator implements IServiceLocator
 
 	private function build(string $identifyingType)
 	{
-		if (!$this->has($identifyingType))
-			throw new \Exception("Cannot build service $identifyingType. No factory for that service registered.");
-
 		// Throw exception on recursion.
 		if (in_array($identifyingType, $this->servicesDuringBuildProcess))
 			throw new \Exception("Recursion: The service $identifyingType cannot be build without having already been built.");

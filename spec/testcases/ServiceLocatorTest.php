@@ -71,6 +71,33 @@ class ServiceLocatorTest extends \PHPUnit_Framework_TestCase
 
 	/**
 	 * @test
+	 * @expectedException \Exception
+	 */
+	public function The_identifying_type_is_unique()
+	{
+		// given
+		$initialServiceLocator = new ServiceLocator;
+		$target = $initialServiceLocator->register(ExampleServiceA::class);
+
+		// when, then (an exception is expected)
+		$target->register(ExampleServiceA::class);
+	}
+
+	/**
+	 * @test
+	 * @expectedException \Exception
+	 */
+	public function An_exception_is_thrown_if_the_second_parameter_to_register_is_invalid()
+	{
+		// given
+		$initialServiceLocator = new ServiceLocator;
+
+		// when, then (an exception is expected)
+		$initialServiceLocator->register(ExampleServiceA::class, 42);
+	}
+
+	/**
+	 * @test
 	 */
 	public function The_has_method_returns_true_if_a_service_is_defined_and_false_if_not()
 	{
@@ -87,16 +114,32 @@ class ServiceLocatorTest extends \PHPUnit_Framework_TestCase
 
 	/**
 	 * @test
-	 * @expectedException \Exception
 	 */
-	public function The_identifying_type_is_unique()
+	public function Every_service_is_only_built_once()
 	{
 		// given
-		$initialServiceLocator = new ServiceLocator;
-		$target = $initialServiceLocator->register(ExampleServiceA::class);
+		$serviceLocator = new ServiceLocator;
+		$target = $serviceLocator->register(ExampleServiceA::class);
+		$service1 = $target->get(ExampleServiceA::class);
 
-		// when, then (an exception is expected)
-		$target->register(ExampleServiceA::class);
+		// when
+		$service2 = $target->get(ExampleServiceA::class);
+
+		// then
+		$this->assertSame($service1, $service2);
+	}
+
+	/**
+	 * @test
+	 * @expectedException \Exception
+	 */
+	public function An_exception_is_thown_if_you_want_to_get_a_service_that_has_not_been_registeres()
+	{
+		// given
+		$target = new ServiceLocator;
+
+		// when, then (an exception is thrown)
+		$target->get(ExampleServiceA::class);
 	}
 
 	/**
@@ -136,23 +179,6 @@ class ServiceLocatorTest extends \PHPUnit_Framework_TestCase
 		// then
 		$this->assertEquals(1, count($injectedServices));
 		$this->assertInstanceOf(ExampleServiceA::class, $injectedServices[0]);
-	}
-
-	/**
-	 * @test
-	 */
-	public function Every_service_is_only_built_once()
-	{
-		// given
-		$serviceLocator = new ServiceLocator;
-		$target = $serviceLocator->register(ExampleServiceA::class);
-		$service1 = $target->get(ExampleServiceA::class);
-
-		// when
-		$service2 = $target->get(ExampleServiceA::class);
-
-		// then
-		$this->assertSame($service1, $service2);
 	}
 
 	/**

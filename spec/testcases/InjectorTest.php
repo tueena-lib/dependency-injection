@@ -63,6 +63,20 @@ class InjectorTest extends \PHPUnit_Framework_TestCase
 
 	/**
 	 * @test
+	 * @expectedException \InvalidArgumentException
+	 */
+	public function An_exception_is_thrown_if_you_try_to_inject_into_a_not_existing_method()
+	{
+		// given
+		$serviceLocator = new ServiceLocator;
+		$object = new  ExampleServiceA;
+
+		// when, then (an exception is thrown)
+		Injector::injectMethod($serviceLocator, $object, 'notExistingMethod');
+	}
+
+	/**
+	 * @test
 	 */
 	public function The_injectClosure_method_injects_services_into_a_closure()
 	{

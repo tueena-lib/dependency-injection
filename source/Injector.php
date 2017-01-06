@@ -16,7 +16,7 @@ class Injector
 {
 	public static function injectConstructor(ServiceLocator $serviceLocator, string $className)
 	{
-		if (!class_exists($className))
+		if (!class_exists($className))  
 			throw new \InvalidArgumentException("Cannot find class $className.");
 
 		$reflectionClass = new \ReflectionClass($className);
