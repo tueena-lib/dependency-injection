@@ -38,6 +38,19 @@ class InjectorTest extends \PHPUnit_Framework_TestCase
 
 	/**
 	 * @test
+	 * @expectedException \InvalidArgumentException
+	 */
+	public function An_exception_is_thrown_if_you_try_to_inject_into_a_constructor_of_a_not_existing_class()
+	{
+		// given
+		$serviceLocator = new ServiceLocator;
+
+		// when, then (an exception is thrown)
+		Injector::injectConstructor($serviceLocator, 'NotExistingClass');
+	}
+
+	/**
+	 * @test
 	 */
 	public function The_injectMethod_method_injects_services_into_a_method()
 	{
@@ -69,7 +82,7 @@ class InjectorTest extends \PHPUnit_Framework_TestCase
 	{
 		// given
 		$serviceLocator = new ServiceLocator;
-		$object = new  ExampleServiceA;
+		$object = new ExampleServiceA;
 
 		// when, then (an exception is thrown)
 		Injector::injectMethod($serviceLocator, $object, 'notExistingMethod');
@@ -125,6 +138,19 @@ class InjectorTest extends \PHPUnit_Framework_TestCase
 
 	/**
 	 * @test
+	 * @expectedException \InvalidArgumentException
+	 */
+	public function An_exception_is_thrown_if_you_try_to_inject_into_a_not_existing_static_method()
+	{
+		// given
+		$serviceLocator = new ServiceLocator;
+
+		// when, then (an exception is thrown)
+		Injector::injectStaticMethod($serviceLocator, ExampleServiceA::class, 'notExistingMethod');
+	}
+
+	/**
+	 * @test
 	 */
 	public function The_injectFunction_method_injects_services_into_a_function()
 	{
@@ -165,4 +191,73 @@ class InjectorTest extends \PHPUnit_Framework_TestCase
 		$this->assertInstanceOf(ExampleServiceA::class, $object->injectedServices[0]);
 	}
 
+	/**
+	 * @test
+	 * @expectedException \InvalidArgumentException
+	 */
+	public function An_exception_is_thrown_if_you_try_to_inject_into_a_not_existing_invoke_method()
+	{
+		// given
+		$serviceLocator = new ServiceLocator;
+		$objectWithoutInvokeMethod = new ExampleServiceA;
+
+		// when, then (an exception is thrown)
+		Injector::injectInvokeMethod($serviceLocator, $objectWithoutInvokeMethod);
+	}
+
+	/**
+	 * @test
+	 * @expectedException \Exception
+	 */
+	public function An_exception_is_thrown_if_the_injection_target_has_a_parameter_without_type_hint()
+	{
+		// given
+		$serviceLocator = new ServiceLocator;
+		$closure = function ($foo) {};
+
+		// when, then (an exception is thrown)
+		Injector::injectClosure($serviceLocator, $closure);
+	}
+
+	/**
+	 * @test
+	 * @expectedException \Exception
+	 */
+	public function An_exception_is_thrown_if_the_injection_target_has_a_parameter_with_a_type_hint_that_is_not_an_existing_class_or_interface()
+	{
+		// given
+		$serviceLocator = new ServiceLocator;
+		$closure = function (Foo $foo) {};
+
+		// when, then (an exception is thrown)
+		Injector::injectClosure($serviceLocator, $closure);
+	}
+
+	/**
+	 * @test
+	 * @expectedException \Exception
+	 */
+	public function An_exception_is_thrown_if_the_injection_target_has_a_parameter_with_a_type_hint_that_is_not_a_class_or_interface()
+	{
+		// given
+		$serviceLocator = new ServiceLocator;
+		$closure = function (string $foo) {};
+
+		// when, then (an exception is thrown)
+		Injector::injectClosure($serviceLocator, $closure);
+	}
+
+	/**
+	 * @test
+	 * @expectedException \Exception
+	 */
+	public function An_exception_is_thrown_if_the_injection_target_has_an_optional_parameter()
+	{
+		// given
+		$serviceLocator = new ServiceLocator;
+		$closure = function (ExampleServiceA $serviceA = null) {};
+
+		// when, then (an exception is thrown)
+		Injector::injectClosure($serviceLocator, $closure);
+	}
 }

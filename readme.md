@@ -5,7 +5,7 @@ Two classes to realize dependency injection for php 7.
 Features
 --------
 * Very tiny: Two classes and one interface (< 200 lines of code).
-* Tet driven developed.
+* Tet driven developed. Code coverage: 100%.
 * `ServiceLocator` is immutable.
 * Every class can be registered as service (no interface required).
 * Services can be registered by class name, by interface name or by a factory method (closure).
