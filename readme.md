@@ -48,12 +48,12 @@ if ($serviceLocator->has(MyMailer::class))
 // The second class of the package is the static Injector class.
 // Use it to inject services into all kind of callables...
 
-$myObject = Injector::injectConstructor($serviceLocator, MyClass:class);
-$result = Injector::injectMethod($serviceLocator, $anObject, 'aMethod');
-$result = Injector::injectStaticMethod($serviceLocator, MyClass:class), 'aMStaticethod';
-$result = Injector::injectInvokeMethod($serviceLocator, $anObject);
-$result = Injector::injectFunction($serviceLocator, 'namespace\\myFunction');
-$result = Injector::injectClosure($serviceLocator, function (MyMailer $mailer) { $mailer->sendSomeMessage(); });
+$myObject = Injector::invokeConstructor($serviceLocator, MyClass:class);
+$result = Injector::invokeMethod($serviceLocator, $anObject, 'aMethod');
+$result = Injector::invokeStaticMethod($serviceLocator, MyClass:class), 'aMStaticethod';
+$result = Injector::invokeInvokeMethod($serviceLocator, $anObject);
+$result = Injector::invokeFunction($serviceLocator, 'namespace\\myFunction');
+$result = Injector::invokeClosure($serviceLocator, function (MyMailer $mailer) { $mailer->sendSomeMessage(); });
 ```
 
 Best practices
