@@ -28,7 +28,7 @@ class InjectorTest extends \PHPUnit_Framework_TestCase
 		$serviceLocator = (new ServiceLocator)->register(ExampleServiceA::class);
 
 		// when (The ExampleServiceB is not used as "service" here)
-		$builtObject = Injector::injectConstructor($serviceLocator, ExampleServiceB::class);
+		$builtObject = Injector::invokeConstructor($serviceLocator, ExampleServiceB::class);
 
 		// then
 		$this->assertInstanceOf(ExampleServiceB::class, $builtObject);
@@ -46,7 +46,7 @@ class InjectorTest extends \PHPUnit_Framework_TestCase
 		$serviceLocator = new ServiceLocator;
 
 		// when, then (an exception is thrown)
-		Injector::injectConstructor($serviceLocator, 'NotExistingClass');
+		Injector::invokeConstructor($serviceLocator, 'NotExistingClass');
 	}
 
 	/**
@@ -66,7 +66,7 @@ class InjectorTest extends \PHPUnit_Framework_TestCase
 		$serviceLocator = (new ServiceLocator)->register(ExampleServiceA::class);
 
 		// when
-		$result = Injector::injectMethod($serviceLocator, $object, 'testMethod');
+		$result = Injector::invokeMethod($serviceLocator, $object, 'testMethod');
 
 		// then
 		$this->assertEquals('foo', $result);
@@ -85,7 +85,7 @@ class InjectorTest extends \PHPUnit_Framework_TestCase
 		$object = new ExampleServiceA;
 
 		// when, then (an exception is thrown)
-		Injector::injectMethod($serviceLocator, $object, 'notExistingMethod');
+		Injector::invokeMethod($serviceLocator, $object, 'notExistingMethod');
 	}
 
 	/**
@@ -102,7 +102,7 @@ class InjectorTest extends \PHPUnit_Framework_TestCase
 		$serviceLocator = (new ServiceLocator)->register(ExampleServiceA::class);
 
 		// when
-		$result = Injector::injectClosure($serviceLocator, $closure);
+		$result = Injector::invokeClosure($serviceLocator, $closure);
 
 		// then
 		$this->assertEquals('foo', $result);
@@ -128,7 +128,7 @@ class InjectorTest extends \PHPUnit_Framework_TestCase
 		$serviceLocator = (new ServiceLocator)->register(ExampleServiceA::class);
 
 		// when
-		$result = Injector::injectStaticMethod($serviceLocator, $className, 'testMethod');
+		$result = Injector::invokeStaticMethod($serviceLocator, $className, 'testMethod');
 
 		// then
 		$this->assertEquals('foo', $result);
@@ -146,7 +146,7 @@ class InjectorTest extends \PHPUnit_Framework_TestCase
 		$serviceLocator = new ServiceLocator;
 
 		// when, then (an exception is thrown)
-		Injector::injectStaticMethod($serviceLocator, ExampleServiceA::class, 'notExistingMethod');
+		Injector::invokeStaticMethod($serviceLocator, ExampleServiceA::class, 'notExistingMethod');
 	}
 
 	/**
@@ -160,7 +160,7 @@ class InjectorTest extends \PHPUnit_Framework_TestCase
 			->register(ExampleServiceB::class);
 
 		// when
-		$result = Injector::injectFunction($serviceLocator, '\\tueenaLib\\serviceLocator\\Spec\\stubs\\injectionTarget');
+		$result = Injector::invokeFunction($serviceLocator, '\\tueenaLib\\serviceLocator\\Spec\\stubs\\injectionTarget');
 
 		// then
 		$this->assertEquals([$serviceLocator->get(ExampleServiceB::class), $serviceLocator->get(ExampleServiceA::class)], $result);
@@ -183,7 +183,7 @@ class InjectorTest extends \PHPUnit_Framework_TestCase
 		$serviceLocator = (new ServiceLocator)->register(ExampleServiceA::class);
 
 		// when
-		$result = Injector::injectInvokeMethod($serviceLocator, $object);
+		$result = Injector::invokeInvokeMethod($serviceLocator, $object);
 
 		// then
 		$this->assertEquals('foo', $result);
@@ -202,7 +202,7 @@ class InjectorTest extends \PHPUnit_Framework_TestCase
 		$objectWithoutInvokeMethod = new ExampleServiceA;
 
 		// when, then (an exception is thrown)
-		Injector::injectInvokeMethod($serviceLocator, $objectWithoutInvokeMethod);
+		Injector::invokeInvokeMethod($serviceLocator, $objectWithoutInvokeMethod);
 	}
 
 	/**
@@ -216,7 +216,7 @@ class InjectorTest extends \PHPUnit_Framework_TestCase
 		$closure = function ($foo) {};
 
 		// when, then (an exception is thrown)
-		Injector::injectClosure($serviceLocator, $closure);
+		Injector::invokeClosure($serviceLocator, $closure);
 	}
 
 	/**
@@ -230,7 +230,7 @@ class InjectorTest extends \PHPUnit_Framework_TestCase
 		$closure = function (Foo $foo) {};
 
 		// when, then (an exception is thrown)
-		Injector::injectClosure($serviceLocator, $closure);
+		Injector::invokeClosure($serviceLocator, $closure);
 	}
 
 	/**
@@ -244,7 +244,7 @@ class InjectorTest extends \PHPUnit_Framework_TestCase
 		$closure = function (string $foo) {};
 
 		// when, then (an exception is thrown)
-		Injector::injectClosure($serviceLocator, $closure);
+		Injector::invokeClosure($serviceLocator, $closure);
 	}
 
 	/**
@@ -258,6 +258,6 @@ class InjectorTest extends \PHPUnit_Framework_TestCase
 		$closure = function (ExampleServiceA $serviceA = null) {};
 
 		// when, then (an exception is thrown)
-		Injector::injectClosure($serviceLocator, $closure);
+		Injector::invokeClosure($serviceLocator, $closure);
 	}
 }

@@ -63,9 +63,9 @@ class ServiceLocator implements IServiceLocator
 		$implementingTypeOrFactory = $this->serviceDefinitions[$identifyingType] ?? $identifyingType;
 
 		if (is_string($implementingTypeOrFactory))
-			$service = Injector::injectConstructor($this, $implementingTypeOrFactory);
+			$service = Injector::invokeConstructor($this, $implementingTypeOrFactory);
 		else
-			$service = Injector::injectClosure($this, $implementingTypeOrFactory);
+			$service = Injector::invokeClosure($this, $implementingTypeOrFactory);
 
 		// Remove the identifying type from the array.
 		$this->servicesDuringBuildProcess = array_diff($this->servicesDuringBuildProcess, [$identifyingType]);
