@@ -16,6 +16,8 @@ use tueenaLib\serviceLocator\ServiceLocator;
 use tueenaLib\serviceLocator\spec\stubs\ExampleServiceA;
 use tueenaLib\serviceLocator\spec\stubs\ExampleServiceB;
 use tueenaLib\serviceLocator\spec\stubs\ExampleServiceC;
+use tueenaLib\serviceLocator\spec\stubs\ExampleServiceD;
+use tueenaLib\serviceLocator\spec\stubs\ExampleServiceE;
 use tueenaLib\serviceLocator\spec\stubs\IExampleServiceInterface;
 
 class ServiceLocatorTest extends \PHPUnit_Framework_TestCase
@@ -133,7 +135,7 @@ class ServiceLocatorTest extends \PHPUnit_Framework_TestCase
 	 * @test
 	 * @expectedException \Exception
 	 */
-	public function An_exception_is_thown_if_you_want_to_get_a_service_that_has_not_been_registeres()
+	public function An_exception_is_thrown_if_you_want_to_get_a_service_that_has_not_been_registered()
 	{
 		// given
 		$target = new ServiceLocator;
