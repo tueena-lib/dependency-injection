@@ -1,24 +1,42 @@
 tueena-lib/service-locator
 ==========================
-Two classes to realize dependency injection for php 7.
+This package provides two classes to realize inversion of control and dependency injection for php 7
+applications.
 
-Features
---------
-* Very tiny: Two classes and one interface (< 200 lines of code).
-* Tet driven developed. Code coverage: 100%.
+You register services to a service locator by telling the service locator how to identify the service
+(a class name or better an interface name) and how to build the service instance. You can pass the
+name of the concrete class here or a closure, that will return the service instance. Other services
+that are required by the constructor or factory method of the service are injected automatically.
+
+All services are only build on demand and only once.
+
+The second class of the library is a static `Injector` class. It provides methods to inject
+services into constructors, methods, static methods, closures, functions and invoke methods.
+
+Features and design decisions
+-----------------------------
+* The library is very small: Two classes and one interface (< 200 lines of code). So you 
+can easily understand the whole thing and also copy it into your source code to adapt it to
+your needs or get rid of the dependency without blowing something up.
+* Test driven developed. Code coverage: 100%.
 * `ServiceLocator` is immutable.
-* Every class can be registered as service (no interface required).
-* Services can be registered by class name, by interface name or by a factory method (closure).
-* Services that are required by a service in the constructor are injected automatically.
+* Every class can be registered as service (no interface or base class required, of course).
+* Services are identified by a class name or interface name.
+* Services implementations are defined by class name or a factory method (closure).
+* Services that are required by a service constructor are injected automatically.
+* Also required services are injected into the factory methods.
+* Services are build on demand.
+* Only one service instance for each registered service per service locator.
 * Already registered services cannot be overwritten.
+* Trying to get a service from the `ServiceLocator`, that has not been registered will
+throw an exception.
 * `Injector` is a static class (it does not contain any state).
 * With the injector you can build classes, call methods, static methods, functions, closures and 
 invoke classes.
 
 Usage
 -----
-This package comes with a class to register services (the `ServiceLocator`) and a static class to inject services into
-constructors, methods, static methods, functions, closures and invoke methods (the `Injector`).
+Register services to the `ServiceLocator`:
 
 ```php
 <?php
@@ -40,34 +58,79 @@ $serviceLocator = (new ServiceLocator)
   // concrete class.
   ->register(MyMailer::class);
 
-// The ServiceLocator provides two more functions:
+// The ServiceLocator provides two more methods, but you probably will never use them.
+// Use the injector instead.
 if ($serviceLocator->has(MyMailer::class))
 	$myMailer = $serviceLocator->get(MyMailer::class);
 // The get() method throws an exception, if the service is not registered.
+```
 
-// The second class of the package is the static Injector class.
-// Use it to inject services into all kind of callables...
+Use the injector to inject services into all kind of callables.
 
+```
 $myObject = Injector::invokeConstructor($serviceLocator, MyClass:class);
 $result = Injector::invokeMethod($serviceLocator, $anObject, 'aMethod');
-$result = Injector::invokeStaticMethod($serviceLocator, MyClass:class), 'aMStaticethod';
+$result = Injector::invokeStaticMethod($serviceLocator, MyClass:class, 'aMStaticethod');
 $result = Injector::invokeInvokeMethod($serviceLocator, $anObject);
 $result = Injector::invokeFunction($serviceLocator, 'namespace\\myFunction');
 $result = Injector::invokeClosure($serviceLocator, function (MyMailer $mailer) { $mailer->sendSomeMessage(); });
 ```
 
+In practice, you will not have to deal with the `ServiceLocator` or the `Injector` very much in your
+application. An example:
+
+```
+// define the services:
+$serviceLocator = (new ServiceLocator)
+    ->register(IConfiguration::class, function () { return include __DIR__ . '/../configuration/local.php'; })
+    ->register(IRequest::class, function () { return new Request($_GET, $_POST, ...); }
+    ->register(IRouter::class, Router::class)
+    ->register(ILowLevelMailer::class, LowLevelMailer::class)
+    ->register(
+        IApplicationMailer::class,
+        function (IConfiguration $configuration, ILowLevelMailer $lowLevelMailer) {
+            $companyEMailAddress = $configuration->getCompanyEMailAddress();
+            $signature = $configuration->getEMailSignature();
+            return new ApplicationMailer($companyEMailAddress, $signature, $loeLevelMailer);
+        }
+    )
+    ->register(IDatabase::class, function (IConfiguration $configuration) { return new Database($configuration->getDsn()); })
+    ->register(IPayment::class, Payment::class)
+    ->register(IPaymentApi::class, PaymentApi::class)
+    ->register(IPaymentStorage::class, PaymentStorage::class)
+    ->register(IUserRepository::class, UserRepository::class)
+    ->register(ISession::class, Session::class);
+
+// The routing
+$router = $serviceLocator->get(Router::class);
+$request = $servcieLocator->get(Reuqest::class);
+list ($controllerClassName, $controllerMethodName, $controllerParameters) = $router->resolve($request);
+
+// Build the controller
+$controller = Injector::invokeConstructor($serviceLocator, $controllerClassName);
+
+// Call the controller method with the parameters of the route
+$controllerResult = Injector::invokeMethod($servcieLocator, $controller, $controllerMethodName);
+
+// Beyond this point, you will not use the $serviceLocator or Injector anymore.
+// A contoller method for example would require an IApplicatiationMailer and an IPayment service in
+// the constructor. The Payment service would require the IPaymentApi and the IPaymentStorage service.
+// The PaymentStorage class would require the IDatabase service and so on. But this all is resolved
+// automatically beyond this point.
+```
+
+
 Best practices
 --------------
 * If you register the services by interfaces, then you can replace concrete
  implementations and it's very easy to mock those services in your unit tests.
-* Passing around the `ServiceLocator` will hide dependencies. You only see the 
- `ServiceLocator` as dependency in the code, but don't know, what services are really 
- required. Of course you can register the `ServiceLocator` instance as service itself,
- but I would not recommend it. Try to move each call to a method of the `Injector` 
- close to the front controller. Typically you would use it within some kind of router 
- to map a http request or cli command to a controller or something like this (if you 
- don't want to hard code the creation of the controller). After that point, there should 
- be no need to access the `ServiceLocator` anymore.
+* Passing around the `ServiceLocator` will obfuscate dependencies. You only see the 
+ `ServiceLocator` as dependency in the method signatures, but not the services 
+ that are really required. Of course you can register the `ServiceLocator` instance
+ as service itself, but I would not recommend it. Try to move each call to a method
+ of the `Injector` close to the front controller (see the example above).
+* If you would need for example two instances of a database service, create a wrapper
+ or subclass for each database.
 
 License
 -------
