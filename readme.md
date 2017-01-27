@@ -67,7 +67,7 @@ if ($serviceLocator->has(MyMailer::class))
 
 Use the injector to inject services into all kind of callables.
 
-```
+```php
 $myObject = Injector::invokeConstructor($serviceLocator, MyClass:class);
 $result = Injector::invokeMethod($serviceLocator, $anObject, 'aMethod');
 $result = Injector::invokeStaticMethod($serviceLocator, MyClass:class, 'aMStaticethod');
@@ -79,7 +79,7 @@ $result = Injector::invokeClosure($serviceLocator, function (MyMailer $mailer) {
 In practice, you will not have to deal with the `ServiceLocator` or the `Injector` very much in your
 application. An example:
 
-```
+```php
 // define the services:
 $serviceLocator = (new ServiceLocator)
     ->register(IConfiguration::class, function () { return include __DIR__ . '/../configuration/local.php'; })
