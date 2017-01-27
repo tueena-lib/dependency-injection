@@ -30,6 +30,8 @@ your needs or get rid of the dependency without blowing something up.
 * Already registered services cannot be overwritten.
 * Trying to get a service from the `ServiceLocator`, that has not been registered will
 throw an exception.
+* Requires explicit service registration: No "autowiring".
+* No annotation support, no injection through setters or interfaces.
 * `Injector` is a static class (it does not contain any state).
 * With the injector you can build classes, call methods, static methods, functions, closures and 
 invoke classes.
@@ -68,9 +70,9 @@ if ($serviceLocator->has(MyMailer::class))
 Use the injector to inject services into all kind of callables.
 
 ```php
-$myObject = Injector::invokeConstructor($serviceLocator, MyClass:class);
+$myObject = Injector::invokeConstructor($serviceLocator, MyClass::class);
 $result = Injector::invokeMethod($serviceLocator, $anObject, 'aMethod');
-$result = Injector::invokeStaticMethod($serviceLocator, MyClass:class, 'aMStaticethod');
+$result = Injector::invokeStaticMethod($serviceLocator, MyClass::class, 'aStaticMethod');
 $result = Injector::invokeInvokeMethod($serviceLocator, $anObject);
 $result = Injector::invokeFunction($serviceLocator, 'namespace\\myFunction');
 $result = Injector::invokeClosure($serviceLocator, function (MyMailer $mailer) { $mailer->sendSomeMessage(); });
@@ -91,7 +93,7 @@ $serviceLocator = (new ServiceLocator)
         function (IConfiguration $configuration, ILowLevelMailer $lowLevelMailer) {
             $companyEMailAddress = $configuration->getCompanyEMailAddress();
             $signature = $configuration->getEMailSignature();
-            return new ApplicationMailer($companyEMailAddress, $signature, $loeLevelMailer);
+            return new ApplicationMailer($companyEMailAddress, $signature, $lowLevelMailer);
         }
     )
     ->register(IDatabase::class, function (IConfiguration $configuration) { return new Database($configuration->getDsn()); })
@@ -119,7 +121,6 @@ $controllerResult = Injector::invokeMethod($servcieLocator, $controller, $contro
 // automatically beyond this point.
 ```
 
-
 Best practices
 --------------
 * If you register the services by interfaces, then you can replace concrete
@@ -129,6 +130,14 @@ Best practices
  that are really required. Of course you can register the `ServiceLocator` instance
  as service itself, but I would not recommend it. Try to move each call to a method
  of the `Injector` close to the front controller (see the example above).
+* We don't support injection through setters, properties (with annotations) or
+ interfaces (that provides an extra method for the injection), because this would cause
+ a separation of the object creation and the injection. This leads to an invalid
+ object state between this two steps. This is not a problem when you use the DI
+ framework, that supports this, because the framework will do the two steps before
+ returning the instance. But it binds you to that framework or requires extra
+ documentation how to use that class (first create it, then inject the required
+ services).
 * If you would need for example two instances of a database service, create a wrapper
  or subclass for each database.
 
