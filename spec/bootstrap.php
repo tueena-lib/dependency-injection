@@ -18,7 +18,7 @@ spl_autoload_register(function ($className) {
 	$namespaceParts = explode('\\', $className);
 	$firstNamespacePart = array_shift($namespaceParts);
 	$secondNamespacePart = array_shift($namespaceParts);
-	if ($firstNamespacePart !== 'tueenaLib' || $secondNamespacePart !== 'serviceLocator')
+	if ($firstNamespacePart !== 'tueenaLib' || $secondNamespacePart !== 'dependencyInjection')
 		return false;
 
 	$basePath = __DIR__ . '/../';

@@ -10,7 +10,8 @@
  */
 
 declare(strict_types=1);
-namespace tueenaLib\serviceLocator\spec\stubs;
+
+namespace tueenaLib\dependencyInjection\spec\stubs;
 
 function injectionTarget(ExampleServiceA $serviceA, ExampleServiceB $serviceB): array
 {

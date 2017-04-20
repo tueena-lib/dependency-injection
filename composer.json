@@ -1,6 +1,6 @@
 {
-    "name": "tueena-lib/service-locator",
-    "description": "A tiny php 7 service locator that enables dependency injection.",
+    "name": "tueena-lib/dependency-injection",
+    "description": "A tiny php 7 library to enable dependency injection.",
     "type": "library",
     "require": {
         "php": ">=7.0.0"
@@ -16,6 +16,6 @@
         }
     ],
     "autoload": {
-        "psr-4": {"tueenaLib\\serviceLocator\\": "source/"}
+        "psr-4": {"tueenaLib\\dependencyInjection\\": "source/"}
     }
 }

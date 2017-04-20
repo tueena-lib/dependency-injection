@@ -1,5 +1,5 @@
-tueena-lib/service-locator
-==========================
+tueena-lib/dependency-injection
+===============================
 This package provides two classes to realize inversion of control and dependency injection for php 7
 applications.
 
@@ -43,7 +43,7 @@ Register services to the `ServiceLocator`:
 ```php
 <?php
 
-use tueenaLib\serviceLocator;
+use tueenaLib\dependencyInjection\ServiceLocator;
 
 // The ServiceLocator is immutable. So the register() method will return a new instance of
 // the ServiceLocator on each call.
@@ -70,6 +70,8 @@ if ($serviceLocator->has(MyMailer::class))
 Use the injector to inject services into all kind of callables.
 
 ```php
+use tueenaLib\dependencyInjection\Injector;
+
 $myObject = Injector::invokeConstructor($serviceLocator, MyClass::class);
 $result = Injector::invokeMethod($serviceLocator, $anObject, 'aMethod');
 $result = Injector::invokeStaticMethod($serviceLocator, MyClass::class, 'aStaticMethod');
@@ -82,7 +84,10 @@ In practice, you will not have to deal with the `ServiceLocator` or the `Injecto
 application. An example:
 
 ```php
-// define the services:
+use tueenaLib\dependencyInjection\ServiceLocator;
+use tueenaLib\dependencyInjection\Injector;
+
+// Define the services.
 $serviceLocator = (new ServiceLocator)
     ->register(IConfiguration::class, function () { return include __DIR__ . '/../configuration/local.php'; })
     ->register(IRequest::class, function () { return new Request($_GET, $_POST, ...); }
@@ -103,16 +108,16 @@ $serviceLocator = (new ServiceLocator)
     ->register(IUserRepository::class, UserRepository::class)
     ->register(ISession::class, Session::class);
 
-// The routing
+// The routing.
 $router = $serviceLocator->get(Router::class);
 $request = $servcieLocator->get(Reuqest::class);
 list ($controllerClassName, $controllerMethodName, $controllerParameters) = $router->resolve($request);
 
-// Build the controller
+// Build the controller.
 $controller = Injector::invokeConstructor($serviceLocator, $controllerClassName);
 
-// Call the controller method with the parameters of the route
-$controllerResult = Injector::invokeMethod($servcieLocator, $controller, $controllerMethodName);
+// Call the controller method with the parameters of the route.
+$controllerResult = call_user_func_array([$controller, $controllerMethodName], $controllerParameters);
 
 // Beyond this point, you will not use the $serviceLocator or Injector anymore.
 // A contoller method for example would require an IApplicatiationMailer and an IPayment service in
@@ -153,7 +158,7 @@ Installation
 ------------
 If you use `Composer`:
 ```
-composer require tueena-lib/service-locator
+composer require tueena-lib/dependency-injector
 ```
 Otherwise just download the two classes and the interface and use it.
 
