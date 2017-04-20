@@ -10,15 +10,15 @@
  */
 
 declare(strict_types=1);
-namespace tueenaLib\serviceLocator\spec;
+namespace tueenaLib\dependencyInjection\spec;
 
-use tueenaLib\serviceLocator\ServiceLocator;
-use tueenaLib\serviceLocator\spec\stubs\ExampleServiceA;
-use tueenaLib\serviceLocator\spec\stubs\ExampleServiceB;
-use tueenaLib\serviceLocator\spec\stubs\ExampleServiceC;
-use tueenaLib\serviceLocator\spec\stubs\ExampleServiceD;
-use tueenaLib\serviceLocator\spec\stubs\ExampleServiceE;
-use tueenaLib\serviceLocator\spec\stubs\IExampleServiceInterface;
+use tueenaLib\dependencyInjection\ServiceLocator;
+use tueenaLib\dependencyInjection\spec\stubs\ExampleServiceA;
+use tueenaLib\dependencyInjection\spec\stubs\ExampleServiceB;
+use tueenaLib\dependencyInjection\spec\stubs\ExampleServiceC;
+use tueenaLib\dependencyInjection\spec\stubs\ExampleServiceD;
+use tueenaLib\dependencyInjection\spec\stubs\ExampleServiceE;
+use tueenaLib\dependencyInjection\spec\stubs\IExampleServiceInterface;
 
 class ServiceLocatorTest extends \PHPUnit_Framework_TestCase
 {

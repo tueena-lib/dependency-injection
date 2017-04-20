@@ -10,7 +10,7 @@
  */
 
 declare(strict_types=1);
-namespace tueenaLib\serviceLocator\spec\stubs;
+namespace tueenaLib\dependencyInjection\spec\stubs;
 
 class ExampleServiceC
 {

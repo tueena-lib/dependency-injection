@@ -10,12 +10,13 @@
  */
 
 declare(strict_types=1);
-namespace tueenaLib\serviceLocator\spec;
 
-use tueenaLib\serviceLocator\Injector;
-use tueenaLib\serviceLocator\ServiceLocator;
-use tueenaLib\serviceLocator\spec\stubs\ExampleServiceA;
-use tueenaLib\serviceLocator\spec\stubs\ExampleServiceB;
+namespace tueenaLib\dependencyInjection\spec;
+
+use tueenaLib\dependencyInjection\Injector;
+use tueenaLib\dependencyInjection\ServiceLocator;
+use tueenaLib\dependencyInjection\spec\stubs\ExampleServiceA;
+use tueenaLib\dependencyInjection\spec\stubs\ExampleServiceB;
 
 class InjectorTest extends \PHPUnit_Framework_TestCase
 {
@@ -160,7 +161,7 @@ class InjectorTest extends \PHPUnit_Framework_TestCase
 			->register(ExampleServiceB::class);
 
 		// when
-		$result = Injector::invokeFunction($serviceLocator, '\\tueenaLib\\serviceLocator\\Spec\\stubs\\injectionTarget');
+		$result = Injector::invokeFunction($serviceLocator, '\\tueenaLib\\dependencyInjection\\Spec\\stubs\\injectionTarget');
 
 		// then
 		$this->assertEquals([$serviceLocator->get(ExampleServiceB::class), $serviceLocator->get(ExampleServiceA::class)], $result);
