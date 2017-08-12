@@ -10,122 +10,111 @@
  */
 
 declare(strict_types=1);
-namespace tueenaLib\dependencyInjection\spec;
+namespace tueenaLib\dependencyInjection;
 
-use tueenaLib\dependencyInjection\ServiceLocator;
-use tueenaLib\dependencyInjection\spec\stubs\ExampleServiceA;
-use tueenaLib\dependencyInjection\spec\stubs\ExampleServiceB;
-use tueenaLib\dependencyInjection\spec\stubs\ExampleServiceC;
-use tueenaLib\dependencyInjection\spec\stubs\ExampleServiceD;
-use tueenaLib\dependencyInjection\spec\stubs\ExampleServiceE;
-use tueenaLib\dependencyInjection\spec\stubs\IExampleServiceInterface;
+use PHPUnit\Framework\TestCase;
+use tueenaLib\dependencyInjection\stubs\IServiceB;
+use tueenaLib\dependencyInjection\stubs\IServiceC;
+use tueenaLib\dependencyInjection\stubs\IServiceD;
+use tueenaLib\dependencyInjection\stubs\IServiceE;
+use tueenaLib\dependencyInjection\stubs\ServiceA;
+use tueenaLib\dependencyInjection\stubs\ServiceB;
+use tueenaLib\dependencyInjection\stubs\ServiceC;
+use tueenaLib\dependencyInjection\stubs\ServiceD;
+use tueenaLib\dependencyInjection\stubs\ServiceE;
+use tueenaLib\dependencyInjection\stubs\IServiceA;
 
-class ServiceLocatorTest extends \PHPUnit_Framework_TestCase
+class ServiceLocatorTest extends TestCase
 {
 	/**
 	 * @test
 	 */
-	public function A_service_can_be_registered_by_the_implementing_type_as_identifying_type()
-	{
-		// given
-		$target = new ServiceLocator;
-
-		// when
-		$returnedServiceLocatorInstance = $target->register(ExampleServiceA::class);
-
-		// then
-		$builtService = $returnedServiceLocatorInstance->get(ExampleServiceA::class);
-		$this->assertInstanceOf(ExampleServiceA::class, $builtService);
-	}
-
-	/**
-	 * @test
-	 */
-	public function A_service_can_be_registered_an_identifying_type_and_an_implementing_type()
-	{
-		// given
-		$target = new ServiceLocator;
-
-		// when
-		$returnedServiceLocatorInstance = $target->register(IExampleServiceInterface::class, ExampleServiceA::class);
-
-		// then
-		$builtService = $returnedServiceLocatorInstance->get(IExampleServiceInterface::class);
-		$this->assertInstanceOf(ExampleServiceA::class, $builtService);
-	}
-
-	/**
-	 * @test
-	 */
-	public function A_service_can_be_registered_a_factory_function()
-	{
-		// given
-		$factory = function () use (&$callCounter) { return new ExampleServiceA; };
-		$target = new ServiceLocator;
-
-		// when
-		$returnedServiceLocatorInstance = $target->register(IExampleServiceInterface::class, $factory);
-
-		// then
-		$builtService = $returnedServiceLocatorInstance->get(IExampleServiceInterface::class);
-		$this->assertInstanceOf(ExampleServiceA::class, $builtService);
-	}
-
-	/**
-	 * @test
-	 * @expectedException \Exception
-	 */
-	public function The_identifying_type_is_unique()
-	{
-		// given
-		$initialServiceLocator = new ServiceLocator;
-		$target = $initialServiceLocator->register(ExampleServiceA::class);
-
-		// when, then (an exception is expected)
-		$target->register(ExampleServiceA::class);
-	}
-
-	/**
-	 * @test
-	 * @expectedException \Exception
-	 */
-	public function An_exception_is_thrown_if_the_second_parameter_to_register_is_invalid()
-	{
-		// given
-		$initialServiceLocator = new ServiceLocator;
-
-		// when, then (an exception is expected)
-		$initialServiceLocator->register(ExampleServiceA::class, 42);
-	}
-
-	/**
-	 * @test
-	 */
-	public function The_has_method_returns_true_if_a_service_is_defined_and_false_if_not()
-	{
-		// given
-		$target = new ServiceLocator;
-
-		// when
-		$returnedServiceLocatorInstance = $target->register(ExampleServiceA::class);
-
-		// then
-		$this->assertTrue($returnedServiceLocatorInstance->has(ExampleServiceA::class));
-		$this->assertFalse($returnedServiceLocatorInstance->has(IExampleServiceInterface::class));
-	}
-
-	/**
-	 * @test
-	 */
-	public function Every_service_is_only_built_once()
+	public function a_service_can_be_registered_and_build_with_a_class_name()
 	{
 		// given
 		$serviceLocator = new ServiceLocator;
-		$target = $serviceLocator->register(ExampleServiceA::class);
-		$service1 = $target->get(ExampleServiceA::class);
 
 		// when
-		$service2 = $target->get(ExampleServiceA::class);
+		$newServiceLocatorObject = $serviceLocator->registerClass(IServiceA::class, ServiceA::class);
+		$builtService = $newServiceLocatorObject->get(IServiceA::class);
+
+		// then
+		$this->assertInstanceOf(ServiceA::class, $builtService);
+	}
+
+	/**
+	 * @test
+	 */
+	public function a_service_can_be_registered_and_build_with_a_factory_function()
+	{
+		// given
+		$factory = function () { return new ServiceA; };
+		$serviceLocator = new ServiceLocator;
+
+		// when
+		$newServiceLocatorObject = $serviceLocator->registerFactory(IServiceA::class, $factory);
+		$builtService = $newServiceLocatorObject->get(IServiceA::class);
+
+		// then
+		$this->assertInstanceOf(ServiceA::class, $builtService);
+	}
+
+	/**
+	 * @test
+	 * @expectedException \Exception
+	 */
+	public function registerClass_throws_an_exception_if_a_service_has_already_been_registered_for_that_interface()
+	{
+		// given
+		$initialServiceLocator = new ServiceLocator;
+		$target = $initialServiceLocator->registerFactory(IServiceA::class, function () {});
+
+		// when, then (an exception is expected)
+		$target->registerClass(IServiceA::class, ServiceA::class);
+	}
+
+	/**
+	 * @test
+	 * @expectedException \Exception
+	 */
+	public function registerFactory_throws_an_exception_if_a_service_has_already_been_registered_for_that_interface()
+	{
+		// given
+		$initialServiceLocator = new ServiceLocator;
+		$target = $initialServiceLocator->registerClass(IServiceA::class, ServiceA::class);
+
+		// when, then (an exception is expected)
+		$target->registerFactory(IServiceA::class, function () {});
+	}
+
+	/**
+	 * @test
+	 */
+	public function the_has_method_returns_true_if_a_service_is_defined_and_false_if_not()
+	{
+		// given
+		$target = new ServiceLocator;
+
+		// when
+		$returnedServiceLocatorInstance = $target->registerClass(IServiceA::class, ServiceA::class);
+
+		// then
+		$this->assertTrue($returnedServiceLocatorInstance->has(IServiceA::class));
+		$this->assertFalse($returnedServiceLocatorInstance->has(\DateTime::class));
+	}
+
+	/**
+	 * @test
+	 */
+	public function every_service_is_only_built_once()
+	{
+		// given
+		$serviceLocator = new ServiceLocator;
+		$target = $serviceLocator->registerClass(IServiceA::class, ServiceA::class);
+		$service1 = $target->get(IServiceA::class);
+
+		// when
+		$service2 = $target->get(IServiceA::class);
 
 		// then
 		$this->assertSame($service1, $service2);
@@ -135,52 +124,52 @@ class ServiceLocatorTest extends \PHPUnit_Framework_TestCase
 	 * @test
 	 * @expectedException \Exception
 	 */
-	public function An_exception_is_thrown_if_you_want_to_get_a_service_that_has_not_been_registered()
+	public function an_exception_is_thrown_if_you_want_to_get_a_service_that_has_not_been_registered()
 	{
 		// given
 		$target = new ServiceLocator;
 
 		// when, then (an exception is thrown)
-		$target->get(ExampleServiceA::class);
+		$target->get(IServiceA::class);
 	}
 
 	/**
 	 * @test
 	 */
-	public function When_a_service_is_build_without_a_factory_function_the_constructor_will_be_injected()
+	public function to_build_a_service_the_constructor_will_be_injected()
 	{
 		// given
 		$serviceLocator = new ServiceLocator;
 		$target = $serviceLocator
-			->register(ExampleServiceA::class)
-			->register(ExampleServiceB::class);
+			->registerClass(IServiceA::class, ServiceA::class)
+			->registerClass(IServiceB::class, ServiceB::class);
 
 		// when
-		$service = $target->get(ExampleServiceB::class);
+		$service = $target->get(IServiceB::class);
 
 		// then
-		$this->assertEquals(1, count($service->injectedServices));
-		$this->assertInstanceOf(ExampleServiceA::class, $service->injectedServices[0]);
+		$this->assertEquals(1, count($service->parametersPassedToTheConstructor));
+		$this->assertInstanceOf(ServiceA::class, $service->parametersPassedToTheConstructor[0]);
 	}
 
 	/**
 	 * @test
 	 */
-	public function When_a_service_is_build_with_a_factory_function_it_will_be_injected()
+	public function to_build_a_service_with_a_factory_function_it_will_be_injected()
 	{
 		// given
-		$injectedServices = [];
+		$passedInParameters = [];
 		$serviceLocator = new ServiceLocator;
 		$target = $serviceLocator
-			->register(ExampleServiceA::class)
-			->register(ExampleServiceB::class, function (ExampleServiceA $exampleServiceA) use (&$injectedServices) { $injectedServices = func_get_args(); });
+			->registerClass(IServiceA::class, ServiceA::class)
+			->registerFactory(IServiceB::class, function (IServiceA $serviceA) use (&$passedInParameters) { $passedInParameters = func_get_args(); });
 
 		// when
-		$target->get(ExampleServiceB::class);
+		$target->get(IServiceB::class);
 
 		// then
-		$this->assertEquals(1, count($injectedServices));
-		$this->assertInstanceOf(ExampleServiceA::class, $injectedServices[0]);
+		$this->assertEquals(1, count($passedInParameters));
+		$this->assertInstanceOf(ServiceA::class, $passedInParameters[0]);
 	}
 
 	/**
@@ -191,10 +180,11 @@ class ServiceLocatorTest extends \PHPUnit_Framework_TestCase
 	{
 		// given
 		$serviceLocator = new ServiceLocator;
-		$target = $serviceLocator->register(ExampleServiceC::class);
+		// The constructor of ServiceC expects a parameter of type ServiceC.
+		$target = $serviceLocator->registerClass(IServiceC::class, ServiceC::class);
 
 		// when, then (an exception is expected)
-		$target->get(ExampleServiceC::class);
+		$target->get(IServiceC::class);
 	}
 
 	/**
@@ -206,10 +196,10 @@ class ServiceLocatorTest extends \PHPUnit_Framework_TestCase
 		// given
 		$serviceLocator = new ServiceLocator;
 		$target = $serviceLocator
-			->register(ExampleServiceD::class)
-			->register(ExampleServiceE::class);
+			->registerClass(IServiceD::class, ServiceD::class)  // ServiceD requires IServiceE
+			->registerClass(IServiceE::class, ServiceE::class); // ServiceE requires IServiceD
 
 		// when, then (an exception is expected)
-		$target->get(ExampleServiceD::class);
+		$target->get(IServiceD::class);
 	}
 }

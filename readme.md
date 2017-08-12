@@ -1,12 +1,14 @@
 tueena-lib/dependency-injection
 ===============================
-This package provides two classes to realize inversion of control and dependency injection for php 7
-applications.
 
-You register services to a service locator by telling the service locator how to identify the service
-(a class name or better an interface name) and how to build the service instance. You can pass the
-name of the concrete class here or a closure, that will return the service instance. Other services
-that are required by the constructor or factory method of the service are injected automatically.
+This package provides two classes to realize dependency injection for php 7 applications.
+
+You register services to a service locator by telling the service locator the interface name that
+identifies the service within the service locator and either the name of the class that will be
+instantiated to create the service or a factory method (a closure) that will return the service 
+instance.
+
+Other services that are required by the constructor or factory method of the service are injected automatically.
 
 All services are only build on demand and only once.
 
@@ -21,17 +23,16 @@ your needs or get rid of the dependency without blowing something up.
 * Test driven developed. Code coverage: 100%.
 * `ServiceLocator` is immutable.
 * Every class can be registered as service (no interface or base class required, of course).
-* Services are identified by a class name or interface name.
+* Services are identified by an interface name.
 * Services implementations are defined by class name or a factory method (closure).
-* Services that are required by a service constructor are injected automatically.
-* Also required services are injected into the factory methods.
+* Services that are required by a service constructor or factory are injected automatically.
 * Services are build on demand.
 * Only one service instance for each registered service per service locator.
 * Already registered services cannot be overwritten.
 * Trying to get a service from the `ServiceLocator`, that has not been registered will
 throw an exception.
 * Requires explicit service registration: No "autowiring".
-* No annotation support, no injection through setters or interfaces.
+* By design no support for injection by annotations, through setters or interfaces.
 * `Injector` is a static class (it does not contain any state).
 * With the injector you can build classes, call methods, static methods, functions, closures and 
 invoke classes.
@@ -41,24 +42,19 @@ Usage
 Register services to the `ServiceLocator`:
 
 ```php
-<?php
-
 use tueenaLib\dependencyInjection\ServiceLocator;
 
-// The ServiceLocator is immutable. So the register() method will return a new instance of
+// The ServiceLocator is immutable. So the register*() methods will return new instances of
 // the ServiceLocator on each call.
 $serviceLocator = (new ServiceLocator)
-  // Define a concrete class, that implements the interface of a service.
+  // Define a concrete class.
   // The constructor of the class may require other services as parameters.
   // They will be injected automatically, if they are registered.
-  ->register(IConfiguration::class, Configuration::class)
+  ->registerClass(IConfiguration::class, Configuration::class)
   // Or define a factory function. The factory function may require other
   // services as well.
-  ->register(ISomeApi::class, function (IConfiguration $configuration) { return new SomeApi($configuration->getApiKey()); })
-  // First parameter may also be an abstract or concrete class.
-  // The second parameter can be omitted, if the first parameter is a
-  // concrete class.
-  ->register(MyMailer::class);
+  ->registerFactory(ISomeApi::class, function (IConfiguration $configuration) { return new SomeApi($configuration->getApiKey()); })
+;
 
 // The ServiceLocator provides two more methods, but you probably will never use them.
 // Use the injector instead.
@@ -80,71 +76,114 @@ $result = Injector::invokeFunction($serviceLocator, 'namespace\\myFunction');
 $result = Injector::invokeClosure($serviceLocator, function (MyMailer $mailer) { $mailer->sendSomeMessage(); });
 ```
 
-In practice, you will not have to deal with the `ServiceLocator` or the `Injector` very much in your
-application. An example:
+In practice, you will not have to deal with the `ServiceLocator` or the `Injector` very much
+in your application. In fact, you don't want to.
+
+Here an example use case: Let's say you have all the application agnostic business logic in 
+classes in a namespace myApp\core. Now you have several applications that uses that core:
+A REST API, an administration tool, some command line tools. Let's say, the REST API 
+requires an `OrderInteractor`. It manages order entities and requires an object, that knows
+how to persist orders somewhere.
+
+You could write a script `core/init.php`, that returns a service locator:
 
 ```php
-use tueenaLib\dependencyInjection\ServiceLocator;
-use tueenaLib\dependencyInjection\Injector;
+return function () {
 
-// Define the services.
-$serviceLocator = (new ServiceLocator)
-    ->register(IConfiguration::class, function () { return include __DIR__ . '/../configuration/local.php'; })
-    ->register(IRequest::class, function () { return new Request($_GET, $_POST, ...); }
-    ->register(IRouter::class, Router::class)
-    ->register(ILowLevelMailer::class, LowLevelMailer::class)
-    ->register(
-        IApplicationMailer::class,
-        function (IConfiguration $configuration, ILowLevelMailer $lowLevelMailer) {
-            $companyEMailAddress = $configuration->getCompanyEMailAddress();
-            $signature = $configuration->getEMailSignature();
-            return new ApplicationMailer($companyEMailAddress, $signature, $lowLevelMailer);
-        }
-    )
-    ->register(IDatabase::class, function (IConfiguration $configuration) { return new Database($configuration->getDsn()); })
-    ->register(IPayment::class, Payment::class)
-    ->register(IPaymentApi::class, PaymentApi::class)
-    ->register(IPaymentStorage::class, PaymentStorage::class)
-    ->register(IUserRepository::class, UserRepository::class)
-    ->register(ISession::class, Session::class);
+	$serviceLocator = (new ServiceLocator)
+		->registerFactory(IConfiguration::class, function () { return new Configuration(__DIR__ . '/configuration/...'); })
+		->registerClass(IMySqlConnection::class, MySqlConnection::class)
 
-// The routing.
-$router = $serviceLocator->get(Router::class);
-$request = $servcieLocator->get(Reuqest::class);
-list ($controllerClassName, $controllerMethodName, $controllerParameters) = $router->resolve($request);
-
-// Build the controller.
-$controller = Injector::invokeConstructor($serviceLocator, $controllerClassName);
-
-// Call the controller method with the parameters of the route.
-$controllerResult = call_user_func_array([$controller, $controllerMethodName], $controllerParameters);
-
-// Beyond this point, you will not use the $serviceLocator or Injector anymore.
-// A contoller method for example would require an IApplicatiationMailer and an IPayment service in
-// the constructor. The Payment service would require the IPaymentApi and the IPaymentStorage service.
-// The PaymentStorage class would require the IDatabase service and so on. But this all is resolved
-// automatically beyond this point.
+		->registerClass(IOrderStorage::class, OrderMySqlStorage::class)
+		->registerClass(IOrderInteractor::class, OrderInteractor::class)
+	;
+	return $serviceLocator;
+};
 ```
 
-Best practices
---------------
-* If you register the services by interfaces, then you can replace concrete
- implementations and it's very easy to mock those services in your unit tests.
-* Passing around the `ServiceLocator` will obfuscate dependencies. You only see the 
- `ServiceLocator` as dependency in the method signatures, but not the services 
- that are really required. Of course you can register the `ServiceLocator` instance
- as service itself, but I would not recommend it. Try to move each call to a method
- of the `Injector` close to the front controller (see the example above).
-* We don't support injection through setters, properties (with annotations) or
- interfaces (that provides an extra method for the injection), because this would cause
- a separation of the object creation and the injection. This leads to an invalid
- object state between this two steps. This is not a problem when you use the DI
- framework, that supports this, because the framework will do the two steps before
- returning the instance. But it binds you to that framework or requires extra
- documentation how to use that class (first create it, then inject the required
- services).
-* If you would need for example two instances of a database service, create a wrapper
- or subclass for each database.
+You'll import that into your application:
+
+```php
+// applications/restApi/init.php
+
+$coreInitializer = include __DIR__ . '/../core/init.php';
+$coreServiceLocator = $coreInitializer();
+
+// Add application specific services.
+$applicationServiceLocator = $coreServiceLocator
+	->registerClass(IWebSecurityPolicy::class, WebSecurityPolicy::class)
+;
+
+// some kind of routing...
+$router = new Router;
+$request = new Request($_GET, ...);
+$controllerClassName = $router->resolveRequest();
+
+$controller = Injector::invokeConstructor($applicationServiceLocator, $controllerClassName);
+$result = $controller->execute($request);
+```
+
+As you can see, you're not going to deal with database connection within the applications.
+But, you can use the database anyways to store application specific data.
+
+Now your REST API controller could look like this:
+
+```php
+public function __construct(IWebSecurityPolicy $securityPolicy, IOrderInteractor $orderInteractor)
+{
+	$this->securityPolicy = $securityPolicy;
+	$this->orderInteractor = $orderInteractor;
+}
+
+public function execute(HttpRequest $httpRequest)
+{
+	if ($this->securityPolicy->isIpAddressBlacklistedToOrder($request->getIpAddress()))
+		...
+	$processNewOrderRequest = self::createProcessNewOrderRequestFromHttpRequest($httpRequest);
+	$this->orderInteractor->processNewOrder($processNewOrderRequest);
+}
+```
+
+The `OrderInteractor` could look something like that:
+
+```php
+public function __construct(IOrderStorage $storage)
+{
+	$this->storage = $storage;
+}
+
+public function processNewOrder(ProcessNewOrderRequest $request)
+{
+	$order = self::createOrderFromRequest($request);
+	$this->storage->saveNewOrder($order);
+	// ...
+}
+```
+
+As you can see, all the stuff that binds your code to tueena-lib is placed in one
+file per module. In a bootstrap file at the entry point of the module or the front
+controller. All the other files and classes are absolutely independent of tueena-lib. 
+No annotations, no calls to `Injector`, no global service locator instance.
+
+Best practices and notes
+------------------------
+* Keep in mind, that each call to `Injector` and each usage of the `ServiceLocator`
+  will bind your software to this library. You want to avoid that. Better don't pass
+  around the service locator. Define the services at one place (per module) within or
+  close to the front controller (etc.). Also use the `Injector` only within the
+  front controller or somewhere there. Don't spread that around.
+* Also passing the service locator around will obfuscate the dependencies. You only see
+  `IServiceLocator` as dependency in the method signatures, but not the services that 
+  are really required.
+* Think about the disadvantages of this "magical" dependency injection. Maybe you
+  can wire up your application with manual dependency injection with factories to
+  not have to create all the objects and database connections and api connections at
+  every application request. Why do we need to use this library to pass the
+  configuration into the database connection object in the example above? It's less code,
+  of course. But is it better code?
+* Expect problems, when you register services to the service locator after services have
+  already been build. The already build instances are not copied into the new service
+  locator instance returned by the `register*` methods.
 
 License
 -------

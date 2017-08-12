@@ -11,254 +11,270 @@
 
 declare(strict_types=1);
 
-namespace tueenaLib\dependencyInjection\spec;
+namespace tueenaLib\dependencyInjection;
 
-use tueenaLib\dependencyInjection\Injector;
-use tueenaLib\dependencyInjection\ServiceLocator;
-use tueenaLib\dependencyInjection\spec\stubs\ExampleServiceA;
-use tueenaLib\dependencyInjection\spec\stubs\ExampleServiceB;
+use PHPUnit\Framework\TestCase;
+use tueenaLib\dependencyInjection\stubs\IServiceA;
+use tueenaLib\dependencyInjection\stubs\IServiceB;
+use tueenaLib\dependencyInjection\stubs\ServiceA;
+use tueenaLib\dependencyInjection\stubs\ServiceB;
 
-class InjectorTest extends \PHPUnit_Framework_TestCase
+class InjectorTest extends TestCase
 {
 	/**
 	 * @test
 	 */
-	public function The_injectConstructor_method_injects_services_into_a_constructor_and_returns_the_object()
+	public function the_injectConstructor_method_injects_services_into_a_constructor_and_returns_the_object()
 	{
 		// given
-		$serviceLocator = (new ServiceLocator)->register(ExampleServiceA::class);
+		$requiredService = new ServiceA;
+		$serviceLocatorProphecy = $this->prophesize(IServiceLocator::class);
+		$serviceLocatorProphecy->get(IServiceA::class)->willReturn($requiredService);
 
-		// when (The ExampleServiceB is not used as "service" here)
-		$builtObject = Injector::invokeConstructor($serviceLocator, ExampleServiceB::class);
+		// when
+		$builtObject = Injector::invokeConstructor($serviceLocatorProphecy->reveal(), ServiceB::class);
 
 		// then
-		$this->assertInstanceOf(ExampleServiceB::class, $builtObject);
-		$this->assertEquals(1, count($builtObject->injectedServices));
-		$this->assertInstanceOf(ExampleServiceA::class, $builtObject->injectedServices[0]);
+		$this->assertInstanceOf(ServiceB::class, $builtObject);
+		$this->assertEquals(1, count($builtObject->parametersPassedToTheConstructor));
+		$this->assertSame($requiredService, $builtObject->parametersPassedToTheConstructor[0]);
 	}
 
 	/**
 	 * @test
 	 * @expectedException \InvalidArgumentException
 	 */
-	public function An_exception_is_thrown_if_you_try_to_inject_into_a_constructor_of_a_not_existing_class()
+	public function an_exception_is_thrown_if_you_try_to_inject_into_a_constructor_of_a_not_existing_class()
 	{
 		// given
-		$serviceLocator = new ServiceLocator;
+		$serviceLocatorProphecy = $this->prophesize(IServiceLocator::class);
 
 		// when, then (an exception is thrown)
-		Injector::invokeConstructor($serviceLocator, 'NotExistingClass');
+		Injector::invokeConstructor($serviceLocatorProphecy->reveal(), 'NotExistingClass');
 	}
 
 	/**
 	 * @test
 	 */
-	public function The_injectMethod_method_injects_services_into_a_method()
+	public function the_injectMethod_method_injects_services_into_a_method()
 	{
 		// given
 		$object = new class {
-			public $injectedServices;
-			public function testMethod(ExampleServiceA $service)
+			public $parametersPassedToTheMethod;
+			public function testMethod(IServiceA $service)
 			{
-				$this->injectedServices = func_get_args();
+				$this->parametersPassedToTheMethod = func_get_args();
 				return 'foo';
 			}
 		};
-		$serviceLocator = (new ServiceLocator)->register(ExampleServiceA::class);
+		$requiredService = new ServiceA;
+		$serviceLocatorProphecy = $this->prophesize(IServiceLocator::class);
+		$serviceLocatorProphecy->get(IServiceA::class)->willReturn($requiredService);
 
 		// when
-		$result = Injector::invokeMethod($serviceLocator, $object, 'testMethod');
+		$result = Injector::invokeMethod($serviceLocatorProphecy->reveal(), $object, 'testMethod');
 
 		// then
 		$this->assertEquals('foo', $result);
-		$this->assertEquals(1, count($object->injectedServices));
-		$this->assertInstanceOf(ExampleServiceA::class, $object->injectedServices[0]);
+		$this->assertEquals(1, count($object->parametersPassedToTheMethod));
+		$this->assertSame($requiredService, $object->parametersPassedToTheMethod[0]);
 	}
 
 	/**
 	 * @test
 	 * @expectedException \InvalidArgumentException
 	 */
-	public function An_exception_is_thrown_if_you_try_to_inject_into_a_not_existing_method()
+	public function an_exception_is_thrown_if_you_try_to_inject_into_a_not_existing_method()
 	{
 		// given
-		$serviceLocator = new ServiceLocator;
-		$object = new ExampleServiceA;
+		$serviceLocatorProphecy = $this->prophesize(IServiceLocator::class);
+		$object = new class {};
 
 		// when, then (an exception is thrown)
-		Injector::invokeMethod($serviceLocator, $object, 'notExistingMethod');
+		Injector::invokeMethod($serviceLocatorProphecy->reveal(), $object, 'notExistingMethod');
 	}
 
 	/**
 	 * @test
 	 */
-	public function The_injectClosure_method_injects_services_into_a_closure()
+	public function the_injectClosure_method_injects_services_into_a_closure()
 	{
 		// given
-		$injectedServices = [];
-		$closure = function (ExampleServiceA $service) use (&$injectedServices) {
-			$injectedServices = func_get_args();
+		$parametersPassedToTheClosure = [];
+		$closure = function (IServiceA $service) use (&$parametersPassedToTheClosure) {
+			$parametersPassedToTheClosure = func_get_args();
 			return 'foo';
 		};
-		$serviceLocator = (new ServiceLocator)->register(ExampleServiceA::class);
+		$requiredService = new ServiceA;
+		$serviceLocatorProphecy = $this->prophesize(IServiceLocator::class);
+		$serviceLocatorProphecy->get(IServiceA::class)->willReturn($requiredService);
 
 		// when
-		$result = Injector::invokeClosure($serviceLocator, $closure);
+		$result = Injector::invokeClosure($serviceLocatorProphecy->reveal(), $closure);
 
 		// then
 		$this->assertEquals('foo', $result);
-		$this->assertEquals(1, count($injectedServices));
-		$this->assertInstanceOf(ExampleServiceA::class, $injectedServices[0]);
+		$this->assertEquals(1, count($parametersPassedToTheClosure));
+		$this->assertSame($requiredService, $parametersPassedToTheClosure[0]);
 	}
 
 	/**
 	 * @test
 	 */
-	public function The_injectStaticMethod_method_injects_services_into_a_static_method()
+	public function the_injectStaticMethod_method_injects_services_into_a_static_method()
 	{
 		// given
 		$object = new class {
-			public static $injectedServices;
-			public static function testMethod(ExampleServiceA $service)
+			public static $parametersPassedToTheMethod;
+			public static function testMethod(IServiceA $service)
 			{
-				self::$injectedServices = func_get_args();
+				self::$parametersPassedToTheMethod = func_get_args();
 				return 'foo';
 			}
 		};
 		$className = get_class($object);
-		$serviceLocator = (new ServiceLocator)->register(ExampleServiceA::class);
+		$requiredService = new ServiceA;
+		$serviceLocatorProphecy = $this->prophesize(IServiceLocator::class);
+		$serviceLocatorProphecy->get(IServiceA::class)->willReturn($requiredService);
 
 		// when
-		$result = Injector::invokeStaticMethod($serviceLocator, $className, 'testMethod');
+		$result = Injector::invokeStaticMethod($serviceLocatorProphecy->reveal(), $className, 'testMethod');
 
 		// then
 		$this->assertEquals('foo', $result);
-		$this->assertEquals(1, count($className::$injectedServices));
-		$this->assertInstanceOf(ExampleServiceA::class, $className::$injectedServices[0]);
+		$this->assertEquals(1, count($className::$parametersPassedToTheMethod));
+		$this->assertSame($requiredService, $className::$parametersPassedToTheMethod[0]);
 	}
 
 	/**
 	 * @test
 	 * @expectedException \InvalidArgumentException
 	 */
-	public function An_exception_is_thrown_if_you_try_to_inject_into_a_not_existing_static_method()
+	public function an_exception_is_thrown_if_you_try_to_inject_into_a_not_existing_static_method()
 	{
 		// given
-		$serviceLocator = new ServiceLocator;
+		$serviceLocatorProphecy = $this->prophesize(IServiceLocator::class);
 
 		// when, then (an exception is thrown)
-		Injector::invokeStaticMethod($serviceLocator, ExampleServiceA::class, 'notExistingMethod');
+		Injector::invokeStaticMethod($serviceLocatorProphecy->reveal(), ServiceA::class, 'notExistingMethod');
 	}
 
 	/**
 	 * @test
 	 */
-	public function The_injectFunction_method_injects_services_into_a_function()
+	public function the_injectFunction_method_injects_services_into_a_function()
 	{
 		// given
-		$serviceLocator = (new ServiceLocator)
-			->register(ExampleServiceA::class)
-			->register(ExampleServiceB::class);
+		$requiredServiceA = new ServiceA;
+		$requiredServiceB = new ServiceB($requiredServiceA);
+		$serviceLocatorProphecy = $this->prophesize(IServiceLocator::class);
+		$serviceLocatorProphecy->get(IServiceA::class)->willReturn($requiredServiceA);
+		$serviceLocatorProphecy->get(IServiceB::class)->willReturn($requiredServiceB);
 
 		// when
-		$result = Injector::invokeFunction($serviceLocator, '\\tueenaLib\\dependencyInjection\\Spec\\stubs\\injectionTarget');
+		$result = Injector::invokeFunction($serviceLocatorProphecy->reveal(), '\\tueenaLib\\dependencyInjection\\stubs\\injectionTarget');
 
 		// then
-		$this->assertEquals([$serviceLocator->get(ExampleServiceB::class), $serviceLocator->get(ExampleServiceA::class)], $result);
+		$this->assertEquals(3, count($result));
+		$this->assertSame($requiredServiceA, $result[0]);
+		$this->assertSame($requiredServiceB, $result[1]);
+		$this->assertEquals('something added by the function', $result[2]);
 	}
 
 	/**
 	 * @test
 	 */
-	public function The_injectInvokeMethod_method_injects_services_into_the_invoke_method()
+	public function the_injectInvokeMethod_method_injects_services_into_the_invoke_method()
 	{
 		// given
 		$object = new class {
-			public $injectedServices;
-			public function __invoke(ExampleServiceA $service)
+			public $parametersPassedToTheInvokeMethod;
+			public function __invoke(IServiceA $service)
 			{
-				$this->injectedServices = func_get_args();
+				$this->parametersPassedToTheInvokeMethod = func_get_args();
 				return 'foo';
 			}
 		};
-		$serviceLocator = (new ServiceLocator)->register(ExampleServiceA::class);
+		$requiredService = new ServiceA;
+		$serviceLocatorProphecy = $this->prophesize(IServiceLocator::class);
+		$serviceLocatorProphecy->get(IServiceA::class)->willReturn($requiredService);
 
 		// when
-		$result = Injector::invokeInvokeMethod($serviceLocator, $object);
+		$result = Injector::invokeInvokeMethod($serviceLocatorProphecy->reveal(), $object);
 
 		// then
 		$this->assertEquals('foo', $result);
-		$this->assertEquals(1, count($object->injectedServices));
-		$this->assertInstanceOf(ExampleServiceA::class, $object->injectedServices[0]);
+		$this->assertEquals(1, count($object->parametersPassedToTheInvokeMethod));
+		$this->assertSame($requiredService, $object->parametersPassedToTheInvokeMethod[0]);
 	}
 
 	/**
 	 * @test
 	 * @expectedException \InvalidArgumentException
 	 */
-	public function An_exception_is_thrown_if_you_try_to_inject_into_a_not_existing_invoke_method()
+	public function an_exception_is_thrown_if_you_try_to_inject_into_a_not_existing_invoke_method()
 	{
 		// given
-		$serviceLocator = new ServiceLocator;
-		$objectWithoutInvokeMethod = new ExampleServiceA;
+		$serviceLocatorProphecy = $this->prophesize(IServiceLocator::class);
+		$objectWithoutInvokeMethod = new ServiceA;
 
 		// when, then (an exception is thrown)
-		Injector::invokeInvokeMethod($serviceLocator, $objectWithoutInvokeMethod);
+		Injector::invokeInvokeMethod($serviceLocatorProphecy->reveal(), $objectWithoutInvokeMethod);
 	}
 
 	/**
 	 * @test
 	 * @expectedException \Exception
 	 */
-	public function An_exception_is_thrown_if_the_injection_target_has_a_parameter_without_type_hint()
+	public function an_exception_is_thrown_if_the_injection_target_has_a_parameter_without_type_hint()
 	{
 		// given
-		$serviceLocator = new ServiceLocator;
+		$serviceLocatorProphecy = $this->prophesize(IServiceLocator::class);
 		$closure = function ($foo) {};
 
 		// when, then (an exception is thrown)
-		Injector::invokeClosure($serviceLocator, $closure);
+		Injector::invokeClosure($serviceLocatorProphecy->reveal(), $closure);
 	}
 
 	/**
 	 * @test
 	 * @expectedException \Exception
 	 */
-	public function An_exception_is_thrown_if_the_injection_target_has_a_parameter_with_a_type_hint_that_is_not_an_existing_class_or_interface()
+	public function an_exception_is_thrown_if_the_injection_target_has_a_parameter_with_a_type_hint_that_is_not_an_existing_class_or_interface()
 	{
 		// given
-		$serviceLocator = new ServiceLocator;
+		$serviceLocatorProphecy = $this->prophesize(IServiceLocator::class);
 		$closure = function (Foo $foo) {};
 
 		// when, then (an exception is thrown)
-		Injector::invokeClosure($serviceLocator, $closure);
+		Injector::invokeClosure($serviceLocatorProphecy->reveal(), $closure);
 	}
 
 	/**
 	 * @test
 	 * @expectedException \Exception
 	 */
-	public function An_exception_is_thrown_if_the_injection_target_has_a_parameter_with_a_type_hint_that_is_not_a_class_or_interface()
+	public function an_exception_is_thrown_if_the_injection_target_has_a_parameter_with_a_type_hint_that_is_not_a_class_or_interface()
 	{
 		// given
-		$serviceLocator = new ServiceLocator;
+		$serviceLocatorProphecy = $this->prophesize(IServiceLocator::class);
 		$closure = function (string $foo) {};
 
 		// when, then (an exception is thrown)
-		Injector::invokeClosure($serviceLocator, $closure);
+		Injector::invokeClosure($serviceLocatorProphecy->reveal(), $closure);
 	}
 
 	/**
 	 * @test
 	 * @expectedException \Exception
 	 */
-	public function An_exception_is_thrown_if_the_injection_target_has_an_optional_parameter()
+	public function an_exception_is_thrown_if_the_injection_target_has_an_optional_parameter()
 	{
 		// given
-		$serviceLocator = new ServiceLocator;
-		$closure = function (ExampleServiceA $serviceA = null) {};
+		$serviceLocatorProphecy = $this->prophesize(IServiceLocator::class);
+		$closure = function (ServiceA $serviceA = null) {};
 
 		// when, then (an exception is thrown)
-		Injector::invokeClosure($serviceLocator, $closure);
+		Injector::invokeClosure($serviceLocatorProphecy->reveal(), $closure);
 	}
 }

@@ -15,44 +15,54 @@ namespace tueenaLib\dependencyInjection;
 /**
  * The service locator provides methods to register and build services.
  *
- * Every service will only build once, there will never be two instances of the same service within one service locator.
- * The class is immutable.
+ * Every service will only be build once, there will never be two instances of the same service within one service
+ * locator. The class is immutable.
  */
 interface IServiceLocator
 {
 	/**
-	 * Registers a service.
+	 * Registers a service by an interface and a class name.
 	 *
-	 * Every service is identified by an 'identifying type'. This is the name of an interface or class that identifies
-	 * the service. When we're going to inject services into a method Foo:bar(IBaz $baz), then the ServiceLocator will
-	 * try to inject a service with the identifying type IBaz. It is a good practice to identify the services by
-	 * interfaces, not by concrete classes.
+	 * Every service is identified by an interface name. The service locator will build an object of the given class
+	 * on demand. That class must implement the interface (which is not checked here).
 	 *
-	 * The second parameter can either be the name of the class, that implements the service, a \Closure that builds the
-	 * service or null.
+	 * The constructor of the service class may require other services as parameters. If they are registered to the
+	 * service locator, they are build and passed to that constructor.
 	 *
-	 * If $implementingTypeOrFactory is a \Closure, it will be injected with other services if required.
-	 *
-	 * If $implementingTypeOrFactory is omitted/null, the identifying type must be a concrete class.
-	 *
-	 * @param string $identifyingType
-	 * @param string|\Closure|null $implementingTypeOrFactory
+	 * @param string $interfaceName
+	 * @param string $className
 	 * @return IServiceLocator
 	 */
-	public function register(string $identifyingType, $implementingTypeOrFactory = null): IServiceLocator;
+	public function registerClass(string $interfaceName, string $className): IServiceLocator;
 
 	/**
-	 * Returns a service instance or throws an exception, if it is not defined.
+	 * Registers a service by an interface name and a factory function (a closure).
 	 *
-	 * @param string $serviceName
+	 * Every service is identified by an interface name. When the service locator needs to provide a service that is
+	 * registered with this method, the factory function is invoked. It must return an object that implements the
+	 * interface.
+	 *
+	 * The closure may require other services as parameters. If they are registered to the service locator, they are build
+	 * and passed to it.
+	 *
+	 * @param string $interfaceName
+	 * @param \Closure $factory
+	 * @return IServiceLocator
+	 */
+	public function registerFactory(string $interfaceName, \Closure $factory): IServiceLocator;
+
+	/**
+	 * Returns a service instance or throws an exception, if the service is not defined.
+	 *
+	 * @param string $interfaceName
 	 * @return object
 	 * @throws \Exception
 	 */
-	public function get(string $identifyingType);
+	public function get(string $interfaceName);
 
 	/**
-	 * @param string $identifyingType
+	 * @param string $interfaceName
 	 * @return bool
 	 */
-	public function has(string $identifyingType): bool;
+	public function has(string $interfaceName): bool;
 }

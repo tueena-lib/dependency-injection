@@ -10,10 +10,11 @@
  */
 
 declare(strict_types=1);
-
 namespace tueenaLib\dependencyInjection\stubs;
 
-function injectionTarget(IServiceA $serviceA, IServiceB $serviceB): array
+class ServiceD
 {
-	return array_merge(func_get_args(), ['something added by the function']);
+	public function __construct(IServiceE $serviceE)
+	{
+	}
 }

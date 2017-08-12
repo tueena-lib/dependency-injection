@@ -12,9 +12,6 @@
 declare(strict_types=1);
 namespace tueenaLib\dependencyInjection;
 
-/**
- * @internal See the interface for doc block documentation.
- */
 class ServiceLocator implements IServiceLocator
 {
 	private $serviceDefinitions;
@@ -26,41 +23,49 @@ class ServiceLocator implements IServiceLocator
 		$this->serviceDefinitions = $serviceDefinitions;
 	}
 
-	public function register(string $identifyingType, $implementingTypeOrFactory = null): IServiceLocator
+	public function registerClass(string $interfaceName, string $className): IServiceLocator
 	{
-		if ($this->has($identifyingType))
-			throw new \Exception("A service $identifyingType has already been defined.");
+		if ($this->has($interfaceName))
+			throw new \Exception("A service $interfaceName has already been defined.");
+		return $this->register($interfaceName, $className);
+	}
 
-		if (!is_null($implementingTypeOrFactory) && !is_string($implementingTypeOrFactory) && !($implementingTypeOrFactory instanceof \Closure))
-			throw new \Exception('Parameter 2 passed to ' . __CLASS__ . '::register() must be either null, a string (the name of the class, that implements the service) or a \Closure (the factory, that builds the service).');
+	public function registerFactory(string $interfaceName, \Closure $factory): IServiceLocator
+	{
+		if ($this->has($interfaceName))
+			throw new \Exception("A service $interfaceName has already been defined.");
+		return $this->register($interfaceName, $factory);
+	}
 
+	public function get(string $interfaceName)
+	{
+		if (!$this->has($interfaceName))
+			throw new \Exception("There is no service $interfaceName registered");
+		if (!isset($this->builtServices[$interfaceName]))
+			$this->builtServices[$interfaceName] = $this->build($interfaceName);
+		return $this->builtServices[$interfaceName];
+	}
+
+	public function has(string $interfaceName): bool
+	{
+		return array_key_exists($interfaceName, $this->serviceDefinitions);
+	}
+
+	private function register(string $interfaceName, $classNameOrFactory): IServiceLocator
+	{
 		$serviceDefinitions = $this->serviceDefinitions;
-		$serviceDefinitions[$identifyingType] = $implementingTypeOrFactory;
+		$serviceDefinitions[$interfaceName] = $classNameOrFactory;
 		return new ServiceLocator($serviceDefinitions);
 	}
 
-	public function get(string $identifyingType)
-	{
-		if (!$this->has($identifyingType))
-			throw new \Exception("There is no service $identifyingType registered");
-		if (!isset($this->builtServices[$identifyingType]))
-			$this->builtServices[$identifyingType] = $this->build($identifyingType);
-		return $this->builtServices[$identifyingType];
-	}
-
-	public function has(string $identifyingType): bool
-	{
-		return array_key_exists($identifyingType, $this->serviceDefinitions);
-	}
-
-	private function build(string $identifyingType)
+	private function build(string $interfaceName)
 	{
 		// Throw exception on recursion.
-		if (in_array($identifyingType, $this->servicesDuringBuildProcess))
-			throw new \Exception("Recursion: The service $identifyingType cannot be build without having already been built.");
-		$this->servicesDuringBuildProcess[] = $identifyingType;
+		if (in_array($interfaceName, $this->servicesDuringBuildProcess))
+			throw new \Exception("Circular reference: To build the service $interfaceName, an already built service $interfaceName would be required.");
+		$this->servicesDuringBuildProcess[] = $interfaceName;
 
-		$implementingTypeOrFactory = $this->serviceDefinitions[$identifyingType] ?? $identifyingType;
+		$implementingTypeOrFactory = $this->serviceDefinitions[$interfaceName] ?? $interfaceName;
 
 		if (is_string($implementingTypeOrFactory))
 			$service = Injector::invokeConstructor($this, $implementingTypeOrFactory);
@@ -68,7 +73,7 @@ class ServiceLocator implements IServiceLocator
 			$service = Injector::invokeClosure($this, $implementingTypeOrFactory);
 
 		// Remove the identifying type from the array.
-		$this->servicesDuringBuildProcess = array_diff($this->servicesDuringBuildProcess, [$identifyingType]);
+		$this->servicesDuringBuildProcess = array_diff($this->servicesDuringBuildProcess, [$interfaceName]);
 
 		return $service;
 	}

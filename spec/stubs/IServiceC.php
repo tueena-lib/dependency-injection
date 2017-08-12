@@ -10,14 +10,9 @@
  */
 
 declare(strict_types=1);
-namespace tueenaLib\dependencyInjection\spec\stubs;
 
-class ExampleServiceB
+namespace tueenaLib\dependencyInjection\stubs;
+
+interface IServiceC
 {
-	public $injectedServices;
-
-	public function __construct(ExampleServiceA $serviceA)
-	{
-		$this->injectedServices = func_get_args();
-	}
 }
