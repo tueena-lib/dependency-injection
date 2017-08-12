@@ -11,8 +11,8 @@
 
 declare(strict_types=1);
 
-namespace tueenaLib\dependencyInjection\spec\stubs;
+namespace tueenaLib\dependencyInjection\stubs;
 
-interface IExampleServiceInterface
+interface IServiceA
 {
 }

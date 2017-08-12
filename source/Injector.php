@@ -14,7 +14,7 @@ namespace tueenaLib\dependencyInjection;
 
 class Injector
 {
-	public static function invokeConstructor(ServiceLocator $serviceLocator, string $className)
+	public static function invokeConstructor(IServiceLocator $serviceLocator, string $className)
 	{
 		if (!class_exists($className))
 			throw new \InvalidArgumentException("Cannot find class $className.");
@@ -31,7 +31,7 @@ class Injector
 		return $reflectionClass->newInstanceArgs($servicesToInject);
 	}
 
-	public static function invokeMethod(ServiceLocator $serviceLocator, $object, string $methodName)
+	public static function invokeMethod(IServiceLocator $serviceLocator, $object, string $methodName)
 	{
 		$className = get_class($object);
 		if (!method_exists($object, $methodName))
@@ -43,7 +43,7 @@ class Injector
 		return call_user_func_array([$object, $methodName], $servicesToInject);
 	}
 
-	public static function invokeStaticMethod($serviceLocator, string $className, string $methodName)
+	public static function invokeStaticMethod(IServiceLocator $serviceLocator, string $className, string $methodName)
 	{
 		if (!method_exists($className, $methodName))
 			throw new \InvalidArgumentException("An object of class $className doesn't have a method $methodName.");
@@ -54,7 +54,7 @@ class Injector
 		return call_user_func_array([$className, $methodName], $servicesToInject);
 	}
 
-	public static function invokeClosure(ServiceLocator $serviceLocator, \Closure $closure)
+	public static function invokeClosure(IServiceLocator $serviceLocator, \Closure $closure)
 	{
 		$reflectionClosure = new \ReflectionFunction($closure);
 		$reflectionParameters = $reflectionClosure->getParameters();
@@ -63,7 +63,7 @@ class Injector
 		return call_user_func_array($closure, $servicesToInject);
 	}
 
-	public static function invokeFunction(ServiceLocator $serviceLocator, string $functionName)
+	public static function invokeFunction(IServiceLocator $serviceLocator, string $functionName)
 	{
 		$reflectionFunction = new \ReflectionFunction($functionName);
 		$reflectionParameters = $reflectionFunction->getParameters();
@@ -72,7 +72,7 @@ class Injector
 		return call_user_func_array($functionName, $servicesToInject);
 	}
 
-	public static function invokeInvokeMethod(ServiceLocator $serviceLocator, $object)
+	public static function invokeInvokeMethod(IServiceLocator $serviceLocator, $object)
 	{
 		$className = get_class($object);
 		if (!method_exists($object, '__invoke'))
@@ -84,7 +84,7 @@ class Injector
 		return call_user_func_array($object, $servicesToInject);
 	}
 
-	private static function getRequiredServices(ServiceLocator $serviceLocator, array $reflectionParameters, string $debugInformation): array
+	private static function getRequiredServices(IServiceLocator $serviceLocator, array $reflectionParameters, string $debugInformation): array
 	{
 		$requiredServices = [];
 		foreach ($reflectionParameters as $reflectionParameter) {

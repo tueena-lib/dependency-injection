@@ -10,11 +10,9 @@
  */
 
 declare(strict_types=1);
-namespace tueenaLib\dependencyInjection\spec\stubs;
 
-class ExampleServiceD
+namespace tueenaLib\dependencyInjection\stubs;
+
+interface IServiceE
 {
-	public function __construct(ExampleServiceE $serviceE)
-	{
-	}
 }

@@ -13,7 +13,6 @@ declare(strict_types=1);
 
 namespace tueenaLib\dependencyInjection\stubs;
 
-function injectionTarget(IServiceA $serviceA, IServiceB $serviceB): array
+interface IServiceB
 {
-	return array_merge(func_get_args(), ['something added by the function']);
 }
